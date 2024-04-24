@@ -172,7 +172,7 @@ public class ZuulEndPointRunner extends BaseZuulFilterRunner<HttpRequestMessage,
             zuulCtx.setShouldSendErrorResponse(false);
             zuulCtx.setErrorResponseSent(true);
             final String errEndPointName = zuulCtx.getErrorEndpoint();
-            return (Strings.isNullOrEmpty(errEndPointName)) ? DEFAULT_ERROR_ENDPOINT.get() : errEndPointName;
+            return Strings.isNullOrEmpty(errEndPointName) ? DEFAULT_ERROR_ENDPOINT.get() : errEndPointName;
         } else {
             return zuulCtx.getEndpoint();
         }
@@ -218,7 +218,7 @@ public class ZuulEndPointRunner extends BaseZuulFilterRunner<HttpRequestMessage,
     }
 
     protected static final ZuulFilter<HttpRequestMessage, HttpResponseMessage> STATIC_RESPONSE_ENDPOINT =
-            new SyncZuulFilterAdapter<HttpRequestMessage, HttpResponseMessage>() {
+            new SyncZuulFilterAdapter<>() {
                 @Override
                 public HttpResponseMessage apply(HttpRequestMessage request) {
                     final HttpResponseMessage resp = request.getContext().getStaticResponse();

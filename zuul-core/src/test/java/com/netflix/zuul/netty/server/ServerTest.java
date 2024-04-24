@@ -68,7 +68,7 @@ class ServerTest {
         ServerStatusManager ssm = mock(ServerStatusManager.class);
         Map<NamedSocketAddress, ChannelInitializer<?>> initializers = new HashMap<>();
         final List<NioSocketChannel> nioChannels = Collections.synchronizedList(new ArrayList<NioSocketChannel>());
-        ChannelInitializer<Channel> init = new ChannelInitializer<Channel>() {
+        ChannelInitializer<Channel> init = new ChannelInitializer<>() {
             @Override
             protected void initChannel(final Channel ch) {
                 LOGGER.info("Channel: {}, isActive={}, isOpen={}", ch.getClass().getName(), ch.isActive(), ch.isOpen());

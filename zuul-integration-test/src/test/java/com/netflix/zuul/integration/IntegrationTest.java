@@ -170,7 +170,7 @@ class IntegrationTest {
     }
 
     static Stream<Arguments> arguments() {
-        List<Arguments> list = new ArrayList<Arguments>();
+        List<Arguments> list = new ArrayList<>();
         for (Protocol protocol : ImmutableSet.of(Protocol.HTTP_1_1)) {
             for (boolean requestBodyBuffering : ImmutableSet.of(Boolean.TRUE, Boolean.FALSE)) {
                 for (boolean responseBodyBuffering : ImmutableSet.of(Boolean.TRUE, Boolean.FALSE)) {
@@ -280,7 +280,7 @@ class IntegrationTest {
                 .get()
                 .build();
         Response response = okHttp.newCall(request).execute();
-        final int expectedStatusCode = (responseBodyBuffering) ? 504 : 200;
+        final int expectedStatusCode = responseBodyBuffering ? 504 : 200;
         assertThat(response.code()).isEqualTo(expectedStatusCode);
         response.close();
     }
@@ -364,7 +364,7 @@ class IntegrationTest {
                 .get()
                 .build();
         Response response = okHttp.newCall(request).execute();
-        final int expectedStatusCode = (responseBodyBuffering) ? 504 : 200;
+        final int expectedStatusCode = responseBodyBuffering ? 504 : 200;
         assertThat(response.code()).isEqualTo(expectedStatusCode);
         response.close();
     }

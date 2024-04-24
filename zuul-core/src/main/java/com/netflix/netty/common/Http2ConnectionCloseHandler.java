@@ -74,10 +74,9 @@ public class Http2ConnectionCloseHandler extends ChannelDuplexHandler {
             if (closeAfterPromise != null) {
 
                 // Add listener to close the channel AFTER response has been sent.
-                promise.addListener(future -> {
+                promise.addListener(future ->
                     // Close the parent (tcp connection) channel.
-                    closeChannel(ctx, closeAfterPromise);
-                });
+                    closeChannel(ctx, closeAfterPromise));
             }
         }
 

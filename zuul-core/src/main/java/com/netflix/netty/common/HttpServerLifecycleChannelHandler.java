@@ -83,9 +83,8 @@ public final class HttpServerLifecycleChannelHandler extends HttpLifecycleChanne
                         if (promise.isDone()) {
                             fireCompleteEventIfNotAlready(ctx, CompleteReason.SESSION_COMPLETE);
                         } else {
-                            promise.addListener(future -> {
-                                fireCompleteEventIfNotAlready(ctx, CompleteReason.SESSION_COMPLETE);
-                            });
+                            promise.addListener(future ->
+                                fireCompleteEventIfNotAlready(ctx, CompleteReason.SESSION_COMPLETE));
                         }
                     }
                 }

@@ -57,7 +57,7 @@ public final class Header {
         if (!name.equals(header.name)) {
             return false;
         }
-        return !(value != null ? !value.equals(header.value) : header.value != null);
+        return value == null ? !value.equals(header.value) : header.value != null;
     }
 
     @Override

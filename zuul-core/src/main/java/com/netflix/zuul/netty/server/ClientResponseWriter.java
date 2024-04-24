@@ -97,7 +97,7 @@ public class ClientResponseWriter extends ChannelInboundHandlerAdapter {
                 return;
             }
 
-            if ((!isHandlingRequest) || (startedSendingResponseToClient)) {
+            if ((!isHandlingRequest) || startedSendingResponseToClient) {
                 /* This can happen if we are already in the process of streaming response back to client OR NOT within active
                   request/response cycle and something like IDLE or Request Read timeout occurs. In that case we have no way
                   to recover other than closing the socket and cleaning up resources used by BOTH responses.
@@ -261,7 +261,7 @@ public class ClientResponseWriter extends ChannelInboundHandlerAdapter {
 
     private void handleComplete(Channel channel) {
         try {
-            if ((isHandlingRequest)) {
+            if (isHandlingRequest) {
                 completeMetrics(channel, zuulResponse);
 
                 // Notify requestComplete listener if configured.

@@ -160,7 +160,7 @@ public class ClientRequestReceiver extends ChannelDuplexHandler {
             } else if (zuulRequest.hasBody() && zuulRequest.getBodyLength() > zuulRequest.getMaxBodySize()) {
                 String errorMsg = "Request too large. "
                         + "clientRequest = " + clientRequest.toString()
-                        + ", uri = " + String.valueOf(clientRequest.uri())
+                        + ", uri = " + clientRequest.uri()
                         + ", info = " + ChannelUtils.channelInfoForLogging(ctx.channel());
                 final ZuulException ze = new ZuulException(errorMsg);
                 ze.setStatusCode(HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE.code());
@@ -286,7 +286,7 @@ public class ClientRequestReceiver extends ChannelDuplexHandler {
     }
 
     private static void dumpDebugInfo(final List<String> debugInfo) {
-        debugInfo.forEach((dbg) -> LOG.debug(dbg));
+        debugInfo.forEach(dbg -> LOG.debug(dbg));
     }
 
     private void handleExpect100Continue(ChannelHandlerContext ctx, HttpRequest req) {
@@ -294,7 +294,7 @@ public class ClientRequestReceiver extends ChannelDuplexHandler {
             PerfMark.event("CRR.handleExpect100Continue");
             final ChannelFuture f =
                     ctx.writeAndFlush(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
-            f.addListener((s) -> {
+            f.addListener(s -> {
                 if (!s.isSuccess()) {
                     throw new ZuulException(s.cause(), "Failed while writing 100-continue response", true);
                 }
@@ -452,14 +452,14 @@ public class ClientRequestReceiver extends ChannelDuplexHandler {
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         try (TaskCloseable ignored = PerfMark.traceTask("CRR.write")) {
             if (msg instanceof HttpResponse) {
-                promise.addListener((future) -> {
+                promise.addListener(future -> {
                     if (!future.isSuccess()) {
                         fireWriteError("response headers", future.cause(), ctx);
                     }
                 });
                 super.write(ctx, msg, promise);
             } else if (msg instanceof HttpContent) {
-                promise.addListener((future) -> {
+                promise.addListener(future -> {
                     if (!future.isSuccess()) {
                         fireWriteError("response content", future.cause(), ctx);
                     }

@@ -276,7 +276,7 @@ public class ProxyEndpoint extends SyncZuulFilterAdapter<HttpRequestMessage, Htt
             }
         }
 
-        if ((error) && (origCh != null)) {
+        if (error && (origCh != null)) {
             origCh.close();
         }
     }
@@ -586,9 +586,8 @@ public class ProxyEndpoint extends SyncZuulFilterAdapter<HttpRequestMessage, Htt
     }
 
     private static void writeBufferedBodyContent(final HttpRequestMessage zuulRequest, final Channel channel) {
-        zuulRequest.getBodyContents().forEach((chunk) -> {
-            channel.write(chunk.retain());
-        });
+        zuulRequest.getBodyContents().forEach(chunk ->
+            channel.write(chunk.retain()));
     }
 
     protected boolean isRemoteZuulRetriesBelowRetryLimit(int maxAllowedRetries) {
@@ -636,7 +635,7 @@ public class ProxyEndpoint extends SyncZuulFilterAdapter<HttpRequestMessage, Htt
                 logger.warn(
                         "{}, origin = {}: {}", err.getStatusCategory().name(), origin.getName(), String.valueOf(ex));
             } else {
-                final String origChInfo = (origCh != null) ? ChannelUtils.channelInfoForLogging(origCh) : "";
+                final String origChInfo = origCh != null ? ChannelUtils.channelInfoForLogging(origCh) : "";
                 if (logger.isInfoEnabled()) {
                     // Include the stacktrace.
                     logger.warn(
@@ -703,7 +702,7 @@ public class ProxyEndpoint extends SyncZuulFilterAdapter<HttpRequestMessage, Htt
     }
 
     private void handleError(final Throwable cause) {
-        final ZuulException ze = (cause instanceof ZuulException)
+        final ZuulException ze = cause instanceof ZuulException
                 ? (ZuulException) cause
                 : requestAttemptFactory.mapNettyToOutboundException(cause, context);
         logger.debug("Proxy endpoint failed.", cause);

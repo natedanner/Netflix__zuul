@@ -180,7 +180,7 @@ public class ZuulFilterChainHandler extends ChannelInboundHandlerAdapter {
     // Race condition: channel.isActive() did not catch
     // channel close..resulting in an i/o exception
     private boolean isClientChannelClosed(Throwable cause) {
-        if (cause instanceof ClosedChannelException || cause instanceof Errors.NativeIoException) {
+        if (cause instanceof ClosedChannelException) {
             logger.error("ZuulFilterChainHandler::isClientChannelClosed - IO Exception");
             return true;
         }

@@ -52,7 +52,7 @@ public class SamplePushAuthHandler extends PushAuthHandler {
     protected PushUserAuth doAuth(FullHttpRequest req, ChannelHandlerContext ctx) {
         final Cookies cookies = parseCookies(req);
         for (final Cookie c : cookies.getAll()) {
-            if (c.name().equals("userAuthCookie")) {
+            if ("userAuthCookie".equals(c.name())) {
                 final String customerId = c.value();
                 if (!Strings.isNullOrEmpty(customerId)) {
                     return new SamplePushUserAuth(customerId);

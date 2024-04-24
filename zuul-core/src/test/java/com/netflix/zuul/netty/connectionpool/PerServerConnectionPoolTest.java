@@ -72,11 +72,11 @@ import static org.mockito.Mockito.spy;
  */
 class PerServerConnectionPoolTest {
 
-    private static LocalAddress LOCAL_ADDRESS;
-    private static DefaultEventLoopGroup ORIGIN_EVENT_LOOP_GROUP;
-    private static DefaultEventLoopGroup CLIENT_EVENT_LOOP_GROUP;
-    private static EventLoop CLIENT_EVENT_LOOP;
-    private static Class<? extends Channel> PREVIOUS_CHANNEL_TYPE;
+    private static LocalAddress localAddress;
+    private static DefaultEventLoopGroup originEventLoopGroup;
+    private static DefaultEventLoopGroup clientEventLoopGroup;
+    private static EventLoop clientEventLoop;
+    private static Class<? extends Channel> previousChannelType;
 
     @Mock
     private ClientChannelManager channelManager;
@@ -102,15 +102,15 @@ class PerServerConnectionPoolTest {
     @BeforeAll
     @SuppressWarnings("deprecation")
     static void staticSetup() throws InterruptedException {
-        LOCAL_ADDRESS = new LocalAddress(UUID.randomUUID().toString());
+        localAddress = new LocalAddress(UUID.randomUUID().toString());
 
-        CLIENT_EVENT_LOOP_GROUP = new DefaultEventLoopGroup(1);
-        CLIENT_EVENT_LOOP = CLIENT_EVENT_LOOP_GROUP.next();
+        clientEventLoopGroup = new DefaultEventLoopGroup(1);
+        clientEventLoop = clientEventLoopGroup.next();
 
-        ORIGIN_EVENT_LOOP_GROUP = new DefaultEventLoopGroup(1);
+        originEventLoopGroup = new DefaultEventLoopGroup(1);
         ServerBootstrap bootstrap = new ServerBootstrap()
-                .group(ORIGIN_EVENT_LOOP_GROUP)
-                .localAddress(LOCAL_ADDRESS)
+                .group(originEventLoopGroup)
+                .localAddress(localAddress)
                 .channel(LocalServerChannel.class)
                 .childHandler(new ChannelInitializer<LocalChannel>() {
                     @Override
@@ -118,17 +118,17 @@ class PerServerConnectionPoolTest {
                 });
 
         bootstrap.bind().sync();
-        PREVIOUS_CHANNEL_TYPE = Server.defaultOutboundChannelType.getAndSet(LocalChannel.class);
+        previousChannelType = Server.defaultOutboundChannelType.getAndSet(LocalChannel.class);
     }
 
     @AfterAll
     @SuppressWarnings("deprecation")
     static void staticCleanup() {
-        ORIGIN_EVENT_LOOP_GROUP.shutdownGracefully();
-        CLIENT_EVENT_LOOP_GROUP.shutdownGracefully();
+        originEventLoopGroup.shutdownGracefully();
+        clientEventLoopGroup.shutdownGracefully();
 
-        if (PREVIOUS_CHANNEL_TYPE != null) {
-            Server.defaultOutboundChannelType.set(PREVIOUS_CHANNEL_TYPE);
+        if (previousChannelType != null) {
+            Server.defaultOutboundChannelType.set(previousChannelType);
         }
     }
 
@@ -173,7 +173,7 @@ class PerServerConnectionPoolTest {
 
         pool = new PerServerConnectionPool(
                 discoveryResult,
-                LOCAL_ADDRESS,
+                localAddress,
                 nettyConnectionFactory,
                 pooledConnectionFactory,
                 connectionPoolConfig,
@@ -198,7 +198,7 @@ class PerServerConnectionPoolTest {
         clientConfig.set(Keys.MaxConnectionsPerHost, 1);
         discoveryResult.incrementOpenConnectionsCount();
 
-        Promise<PooledConnection> promise = pool.acquire(CLIENT_EVENT_LOOP, currentPassport, new AtomicReference<>());
+        Promise<PooledConnection> promise = pool.acquire(clientEventLoop, currentPassport, new AtomicReference<>());
 
         assertFalse(promise.isSuccess());
         assertTrue(promise.cause() instanceof OriginConnectException);
@@ -208,7 +208,7 @@ class PerServerConnectionPoolTest {
     @Test
     void acquireNewConnection() throws InterruptedException, ExecutionException {
         CurrentPassport currentPassport = CurrentPassport.create();
-        Promise<PooledConnection> promise = pool.acquire(CLIENT_EVENT_LOOP, currentPassport, new AtomicReference<>());
+        Promise<PooledConnection> promise = pool.acquire(clientEventLoop, currentPassport, new AtomicReference<>());
 
         PooledConnection connection = promise.sync().get();
         assertEquals(1, requestConnCounter.count());
@@ -219,7 +219,7 @@ class PerServerConnectionPoolTest {
         assertEquals(1, connsInUse.get());
 
         // check state on PooledConnection - not all thread safe
-        CLIENT_EVENT_LOOP
+        clientEventLoop
                 .submit(() -> {
                     checkChannelState(connection, currentPassport, 1);
                 })
@@ -229,11 +229,11 @@ class PerServerConnectionPoolTest {
     @Test
     void acquireConnectionFromPoolAndRelease() throws InterruptedException, ExecutionException {
         CurrentPassport currentPassport = CurrentPassport.create();
-        Promise<PooledConnection> promise = pool.acquire(CLIENT_EVENT_LOOP, currentPassport, new AtomicReference<>());
+        Promise<PooledConnection> promise = pool.acquire(clientEventLoop, currentPassport, new AtomicReference<>());
 
         PooledConnection connection = promise.sync().get();
 
-        CLIENT_EVENT_LOOP
+        clientEventLoop
                 .submit(() -> {
                     pool.release(connection);
                 })
@@ -242,14 +242,14 @@ class PerServerConnectionPoolTest {
         assertEquals(1, connsInPool.get());
 
         CurrentPassport newPassport = CurrentPassport.create();
-        Promise<PooledConnection> secondPromise = pool.acquire(CLIENT_EVENT_LOOP, newPassport, new AtomicReference<>());
+        Promise<PooledConnection> secondPromise = pool.acquire(clientEventLoop, newPassport, new AtomicReference<>());
 
         PooledConnection connection2 = secondPromise.sync().get();
         assertEquals(connection, connection2);
         assertEquals(2, requestConnCounter.count());
         assertEquals(0, connsInPool.get());
 
-        CLIENT_EVENT_LOOP
+        clientEventLoop
                 .submit(() -> {
                     checkChannelState(connection, newPassport, 2);
                 })
@@ -259,11 +259,11 @@ class PerServerConnectionPoolTest {
     @Test
     void releaseFromPoolButAlreadyClosed() throws InterruptedException, ExecutionException {
         CurrentPassport currentPassport = CurrentPassport.create();
-        Promise<PooledConnection> promise = pool.acquire(CLIENT_EVENT_LOOP, currentPassport, new AtomicReference<>());
+        Promise<PooledConnection> promise = pool.acquire(clientEventLoop, currentPassport, new AtomicReference<>());
 
         PooledConnection connection = promise.sync().get();
 
-        CLIENT_EVENT_LOOP
+        clientEventLoop
                 .submit(() -> {
                     pool.release(connection);
                 })
@@ -273,7 +273,7 @@ class PerServerConnectionPoolTest {
         connection.getChannel().deregister().sync();
 
         CurrentPassport newPassport = CurrentPassport.create();
-        Promise<PooledConnection> secondPromise = pool.acquire(CLIENT_EVENT_LOOP, newPassport, new AtomicReference<>());
+        Promise<PooledConnection> secondPromise = pool.acquire(clientEventLoop, newPassport, new AtomicReference<>());
         PooledConnection connection2 = secondPromise.sync().get();
 
         assertNotEquals(connection, connection2);
@@ -289,10 +289,10 @@ class PerServerConnectionPoolTest {
         CurrentPassport currentPassport = CurrentPassport.create();
 
         clientConfig.set(ConnectionPoolConfigImpl.PER_SERVER_WATERLINE, 0);
-        Promise<PooledConnection> promise = pool.acquire(CLIENT_EVENT_LOOP, currentPassport, new AtomicReference<>());
+        Promise<PooledConnection> promise = pool.acquire(clientEventLoop, currentPassport, new AtomicReference<>());
 
         PooledConnection connection = promise.sync().get();
-        CLIENT_EVENT_LOOP
+        clientEventLoop
                 .submit(() -> {
                     assertFalse(pool.release(connection));
                     assertEquals(1, closeAboveHighWaterMarkCounter.count());
@@ -306,12 +306,12 @@ class PerServerConnectionPoolTest {
     @Test
     void releaseFromPoolWhileDraining() throws InterruptedException, ExecutionException {
         Promise<PooledConnection> promise =
-                pool.acquire(CLIENT_EVENT_LOOP, CurrentPassport.create(), new AtomicReference<>());
+                pool.acquire(clientEventLoop, CurrentPassport.create(), new AtomicReference<>());
 
         PooledConnection connection = promise.sync().get();
         pool.drain();
 
-        CLIENT_EVENT_LOOP
+        clientEventLoop
                 .submit(() -> {
                     assertFalse(connection.isInPool());
                     assertTrue(
@@ -331,7 +331,7 @@ class PerServerConnectionPoolTest {
         assertFalse(pool.isAvailable());
         assertThrows(
                 IllegalStateException.class,
-                () -> pool.acquire(CLIENT_EVENT_LOOP, CurrentPassport.create(), new AtomicReference<>()));
+                () -> pool.acquire(clientEventLoop, CurrentPassport.create(), new AtomicReference<>()));
     }
 
     @Test
@@ -360,7 +360,7 @@ class PerServerConnectionPoolTest {
     void handleConnectCompletionWithException() {
 
         EmbeddedChannel channel = new EmbeddedChannel();
-        Promise<PooledConnection> promise = CLIENT_EVENT_LOOP.newPromise();
+        Promise<PooledConnection> promise = clientEventLoop.newPromise();
         pool.handleConnectCompletion(
                 channel.newFailedFuture(new RuntimeException("runtime failure")), promise, CurrentPassport.create());
 
@@ -374,7 +374,7 @@ class PerServerConnectionPoolTest {
     void handleConnectCompletionWithDecoderExceptionIsUnwrapped() {
 
         EmbeddedChannel channel = new EmbeddedChannel();
-        Promise<PooledConnection> promise = CLIENT_EVENT_LOOP.newPromise();
+        Promise<PooledConnection> promise = clientEventLoop.newPromise();
         pool.handleConnectCompletion(
                 channel.newFailedFuture(new DecoderException(new SSLHandshakeException("Invalid tls cert"))),
                 promise,

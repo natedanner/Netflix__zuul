@@ -64,7 +64,7 @@ public class ErrorStatsData implements NamedCount {
 
         ErrorStatsData that = (ErrorStatsData) o;
 
-        return !(errorCause != null ? !errorCause.equals(that.errorCause) : that.errorCause != null);
+        return errorCause == null ? !errorCause.equals(that.errorCause) : that.errorCause != null;
     }
 
     @Override
